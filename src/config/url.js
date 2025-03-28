@@ -10,5 +10,5 @@ export const AUTH_URL = `${BASE_URL}/auth`;
 export const API_URL = {
   REGISTER: `${AUTH_URL}/register`,
   LOGIN: `${AUTH_URL}/login`,
-  TASKS: `${API_URL}/tasks`,
+  TASKS: `${BASE_URL}/tasks`,
 };

@@ -1,18 +1,19 @@
 import React, { useState } from "react";
 import { AuthLayout } from "../../components";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import axios from "axios";
 import { FaRegEyeSlash, FaRegEye } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import { APP_URL } from "../../config";
+import { Link, useNavigate } from "react-router-dom";
+import { APP_URL, API_URL } from "../../config";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const schema = yup.object().shape({
     email: yup
@@ -45,13 +46,34 @@ const Login = () => {
     formState: { errors },
   } = useForm({ resolver: yupResolver(schema), mode: "onChange" });
 
-  const handleLogin = (data) => {};
+  const loginMutation = useMutation({
+    mutationFn: async (data) => {
+      setLoading(true);
+      const response = await axios.post(API_URL.LOGIN, data);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      localStorage.setItem("token", data?.token);
+      queryClient.invalidateQueries("auth");
+      navigate(APP_URL.DASHBOARD);
+      setLoading(false);
+      reset();
+    },
+    onError: (error) => {
+      alert(error.response?.data?.message || "Login failed!");
+      setLoading(false);
+    },
+  });
+
+  const handleLogin = (data) => {
+    loginMutation.mutate(data);
+  };
 
   return (
     <AuthLayout>
       <form
         onSubmit={handleSubmit(handleLogin)}
-        className="p-4  rounded-xl bg-white md:w-[30%] w-[90%] h-fit  shadow-2xl flex flex-col gap-y-4 shadow-[#7B1984]"
+        className="p-4  rounded-xl bg-white xl:w-[30%] md:w-[40%] w-[90%] h-fit  shadow-2xl flex flex-col gap-y-4 shadow-[#7B1984]"
       >
         <h1 className="md:text-4xl text-2xl text-[#7B1984] font-bold uppercase text-center md:my-4 my-2">
           Login
@@ -111,7 +133,7 @@ const Login = () => {
           } px-6 py-2.5 md:text-base text-sm uppercase font-bold rounded-lg text-white w-full flex justify-center`}
         >
           {loading ? (
-            <div className="h-3.5 w-3.5 rounded-full animate-spin border-white border-t-2"></div>
+            <div className="md:h-4 md:w-4 h-3.5 w-3.5 rounded-full animate-spin border-white border-t-2"></div>
           ) : (
             "Login"
           )}

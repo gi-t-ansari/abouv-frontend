@@ -2,9 +2,14 @@ import React from "react";
 import { Dashboard, Login, Register } from "./pages";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { APP_URL } from "./config";
+import { useQuery } from "@tanstack/react-query";
 
 function App() {
-  const authToken = localStorage.getItem("authToken");
+  const { data: token } = useQuery({
+    queryKey: ["auth"],
+    queryFn: () => localStorage.getItem("token"),
+    staleTime: Infinity,
+  });
 
   return (
     <BrowserRouter>
@@ -12,17 +17,13 @@ function App() {
         <Route
           path={APP_URL.DASHBOARD}
           element={
-            !!authToken ? (
-              <Dashboard />
-            ) : (
-              <Navigate to={APP_URL.LOGIN} replace />
-            )
+            !!token ? <Dashboard /> : <Navigate to={APP_URL.LOGIN} replace />
           }
         />
         <Route
           path={APP_URL.LOGIN}
           element={
-            !!authToken ? <Navigate to={APP_URL.HOME} replace /> : <Login />
+            !!token ? <Navigate to={APP_URL.DASHBOARD} replace /> : <Login />
           }
         />
         <Route path={APP_URL.REGISTER} element={<Register />} />
@@ -30,7 +31,7 @@ function App() {
           path="*"
           element={
             <Navigate
-              to={!!authToken ? APP_URL.DASHBOARD : APP_URL.LOGIN}
+              to={!!token ? APP_URL.DASHBOARD : APP_URL.LOGIN}
               replace
             />
           }

@@ -1,18 +1,19 @@
 import React, { useState } from "react";
 import { AuthLayout } from "../../components";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import axios from "axios";
 import { FaRegEyeSlash, FaRegEye } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import { APP_URL } from "../../config";
+import { Link, useNavigate } from "react-router-dom";
+import { APP_URL, API_URL } from "../../config";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const schema = yup.object().shape({
     name: yup
@@ -51,13 +52,37 @@ const Register = () => {
     formState: { errors },
   } = useForm({ resolver: yupResolver(schema), mode: "onChange" });
 
-  const handleRegister = (data) => {};
+  const registerMutation = useMutation({
+    mutationFn: async (userData) => {
+      setLoading(true);
+      const response = await axios.post(API_URL.REGISTER, userData, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      navigate(APP_URL.LOGIN);
+      reset();
+      setLoading(false);
+    },
+    onError: (error) => {
+      console.error(
+        "Registration Error:",
+        error.response?.data?.message || error.message
+      );
+      setLoading(false);
+    },
+  });
+
+  const handleRegister = (data) => {
+    registerMutation.mutate(data);
+  };
 
   return (
     <AuthLayout>
       <form
         onSubmit={handleSubmit(handleRegister)}
-        className="p-4  rounded-xl bg-white md:w-[30%] w-[90%] h-fit  shadow-2xl flex flex-col gap-y-4 shadow-[#7B1984]"
+        className="p-4  rounded-xl bg-white xl:w-[30%] md:w-[40%] w-[90%] h-fit  shadow-2xl flex flex-col gap-y-4 shadow-[#7B1984]"
       >
         <h1 className="md:text-4xl text-2xl text-[#7B1984] font-bold uppercase text-center md:my-4 my-2">
           Register
@@ -133,14 +158,18 @@ const Register = () => {
           } px-6 py-2.5 md:text-base text-sm uppercase font-bold rounded-lg text-white w-full flex justify-center`}
         >
           {loading ? (
-            <div className="h-3.5 w-3.5 rounded-full animate-spin border-white border-t-2"></div>
+            <div className="md:h-4 md:w-4 h-3.5 w-3.5 rounded-full animate-spin border-white border-t-2"></div>
           ) : (
             "Register"
           )}
         </button>
         <p className="text-center md:text-sm text-xs">
           Already Registered?{" "}
-          <Link to={APP_URL.LOGIN} className="font-bold text-[#7B1984]">
+          <Link
+            aria-disabled={loading}
+            to={APP_URL.LOGIN}
+            className="font-bold text-[#7B1984]"
+          >
             Login
           </Link>
         </p>
